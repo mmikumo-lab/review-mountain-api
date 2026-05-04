@@ -1,5 +1,6 @@
 const mountainModel = require('../models/mountainModel');
 const { validateMountainName, validateElevationDiff } = require('../utils/validator');
+const scraperService = require('../services/scraperService');
 
 /**
  * POST /api/mountains - 山を作成
@@ -88,6 +89,52 @@ const updateMountain = async (req, res) => {
 };
 
 /**
+ * GET /api/mountains?name={mountainName} - 山を名前で検索（スクレイピング対応）
+ */
+const getMountainByNameSearch = async (req, res) => {
+  try {
+    const { name } = req.query;
+
+    // バリデーション
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: '山の名前を指定してください',
+      });
+    }
+
+    // DBで検索
+    let mountain = await mountainModel.getMountainByName(name);
+
+    // DBにない場合はスクレイピング
+    if (!mountain) {
+      console.log(`山 "${name}" がDBにありません。スクレイピングを試みます...`);
+
+      const elevationDiff = await scraperService.scrapeElevationDiff(name);
+
+      if (elevationDiff === null) {
+        return res.status(404).json({
+          error: 'Mountain not found',
+          message: '指定された山が見つかりません',
+        });
+      }
+
+      // スクレイピング結果をDBに保存
+      mountain = await mountainModel.createMountain(name, elevationDiff);
+      console.log(`山 "${name}" をDBに保存しました（標高差: ${elevationDiff}m）`);
+    }
+
+    res.json(mountain);
+  } catch (error) {
+    console.error('getMountainByNameSearch error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'サーバーエラーが発生しました',
+    });
+  }
+};
+
+/**
  * DELETE /api/mountains/:id - 山を削除
  */
 const deleteMountain = async (req, res) => {
@@ -109,6 +156,7 @@ const deleteMountain = async (req, res) => {
 module.exports = {
   createMountain,
   getMountainById,
+  getMountainByNameSearch,
   updateMountain,
   deleteMountain,
 };
