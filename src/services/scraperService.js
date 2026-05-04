@@ -3,23 +3,8 @@ const cheerio = require('cheerio');
 
 const SCRAPER_CONFIG = {
   timeout: 10000,
-  userAgent: 'Mozilla/5.0',
-  retryCount: 3,
-  retryDelay: 1000,
-};
-
-// ダミーデータ（yamaquest.comの実際の構造に応じて実装を変更）
-const MOCK_DATA = {
-  '白馬岳': 1200,
-  '槍ヶ岳': 1400,
-  '剣岳': 1300,
-  '北岳': 1500,
-  '穂高岳': 1350,
-  '立山': 1100,
-  '八ヶ岳': 1100,
-  '赤岳': 950,
-  '甲斐駒ヶ岳': 1400,
-  '仙丈ヶ岳': 1350,
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+  baseUrl: 'http://www.yamaquest.com/list/search.php',
 };
 
 /**
@@ -31,17 +16,9 @@ const scrapeElevationDiff = async (mountainName) => {
   try {
     console.log(`スクレイピング開始: ${mountainName}`);
 
-    // ダミー実装: モックデータから取得
-    // 実際の実装では、yamaquest.comにアクセスしてスクレイピング
-    if (MOCK_DATA[mountainName]) {
-      console.log(`モックデータから取得: ${mountainName} = ${MOCK_DATA[mountainName]}m`);
-      return MOCK_DATA[mountainName];
-    }
-
-    // 実際の実装例（コメントアウト）
-    /*
-    const response = await axios.get('http://www.yamaquest.com/', {
-      params: { search: mountainName },
+    // yamaquest.comの検索APIにアクセス
+    const response = await axios.get(SCRAPER_CONFIG.baseUrl, {
+      params: { keyw: mountainName },
       timeout: SCRAPER_CONFIG.timeout,
       headers: {
         'User-Agent': SCRAPER_CONFIG.userAgent,
@@ -50,22 +27,30 @@ const scrapeElevationDiff = async (mountainName) => {
 
     const $ = cheerio.load(response.data);
 
-    // サイトのHTML構造に応じて標高差を抽出
-    const elevationDiffText = $('.elevation-diff').text();
-    const elevationDiff = parseInt(elevationDiffText, 10);
+    // 最初の検索結果から標高差を抽出
+    // HTML構造: <table class="li-data"> の中の4番目の<td>に標高差がある
+    const firstResult = $('.li-box').first();
 
-    if (isNaN(elevationDiff)) {
+    if (firstResult.length === 0) {
+      console.log(`スクレイピング結果: ${mountainName} は見つかりませんでした`);
       return null;
     }
 
-    return elevationDiff;
-    */
+    // テーブルから標高差を取得（4番目のtd）
+    const elevationDiffText = firstResult.find('.li-data tr:nth-child(2) td:nth-child(4)').text().trim();
 
-    // 見つからない場合
-    console.log(`スクレイピング結果: ${mountainName} は見つかりませんでした`);
-    return null;
+    // "1675m" から数値のみ抽出
+    const elevationDiff = parseInt(elevationDiffText.replace(/[^\d]/g, ''), 10);
+
+    if (isNaN(elevationDiff)) {
+      console.log(`スクレイピング結果: ${mountainName} の標高差を抽出できませんでした`);
+      return null;
+    }
+
+    console.log(`スクレイピング成功: ${mountainName} = ${elevationDiff}m`);
+    return elevationDiff;
   } catch (error) {
-    console.error('scrapeElevationDiff error:', error);
+    console.error('scrapeElevationDiff error:', error.message);
     return null;
   }
 };
