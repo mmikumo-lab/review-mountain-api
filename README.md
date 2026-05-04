@@ -79,7 +79,8 @@ npm start
 ### エンドポイント一覧
 
 - `POST /api/mountains` - 山の新規登録
-- `GET /api/mountains?name={name}` - 山の標高差取得
+- `GET /api/mountains?name={name}` - 山の標高差取得（スクレイピング対応）
+- `GET /api/mountains/:id` - 山をIDで取得
 - `PUT /api/mountains/:id` - 山の情報更新
 - `DELETE /api/mountains/:id` - 山の削除
 
@@ -96,6 +97,8 @@ review_mountain/
 │   │   └── mountainController.js  # ビジネスロジック
 │   ├── models/
 │   │   └── mountainModel.js  # DBアクセス層
+│   ├── services/
+│   │   └── scraperService.js # Webスクレイピング
 │   ├── utils/
 │   │   └── validator.js      # バリデーション
 │   └── app.js                # Expressアプリ設定
