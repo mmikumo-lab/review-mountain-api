@@ -1,5 +1,8 @@
 const express = require('express');
-require('dotenv').config();
+const path = require('path');
+
+// 明示的に .env ファイルのパスを指定
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
