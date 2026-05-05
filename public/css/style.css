@@ -96,6 +96,23 @@ h1 {
   color: #4CAF50;
 }
 
+.total-time {
+  font-size: 1.2em;
+  color: #666;
+  margin-top: 15px;
+}
+
+.time-value {
+  font-size: 1.3em;
+  font-weight: bold;
+  color: #2196F3;
+}
+
+.no-time {
+  color: #999;
+  font-style: italic;
+}
+
 .notes {
   margin-top: 20px;
   font-size: 1em;
