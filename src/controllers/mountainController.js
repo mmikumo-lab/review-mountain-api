@@ -135,6 +135,22 @@ const getMountainByNameSearch = async (req, res) => {
 };
 
 /**
+ * GET /api/mountains - 全ての山を取得
+ */
+const getAllMountains = async (req, res) => {
+  try {
+    const mountains = await mountainModel.getAllMountains();
+    res.json(mountains);
+  } catch (error) {
+    console.error('getAllMountains error:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'サーバーエラーが発生しました',
+    });
+  }
+};
+
+/**
  * DELETE /api/mountains/:id - 山を削除
  */
 const deleteMountain = async (req, res) => {
@@ -159,4 +175,5 @@ module.exports = {
   getMountainByNameSearch,
   updateMountain,
   deleteMountain,
+  getAllMountains,
 };
