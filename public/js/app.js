@@ -54,10 +54,6 @@ async function searchMountain() {
 function displayResult(mountain) {
   const resultDiv = document.getElementById('result');
 
-  const notesHtml = mountain.notes
-    ? `<p class="notes">備考: ${mountain.notes}</p>`
-    : '<p class="notes no-notes">備考情報なし</p>';
-
   const totalTimeHtml = mountain.total_time
     ? `<p class="total-time">総歩行時間: <span class="time-value">${mountain.total_time}</span></p>`
     : '<p class="total-time no-time">総歩行時間: 不明</p>';
@@ -67,7 +63,6 @@ function displayResult(mountain) {
       <h2>${mountain.name}</h2>
       <p class="elevation">標高差: <span class="elevation-value">${mountain.elevation_diff}m</span></p>
       ${totalTimeHtml}
-      ${notesHtml}
     </div>
   `;
 }
