@@ -5,9 +5,16 @@ const mountainController = require('../controllers/mountainController');
 // POST /api/mountains - 山を作成
 router.post('/mountains', mountainController.createMountain);
 
-// GET /api/mountains?name={name} - 山を名前で検索（スクレイピング対応）
-// 注意: この行は GET /mountains/:id より前に定義する必要があります
-router.get('/mountains', mountainController.getMountainByNameSearch);
+// GET /api/mountains - 全件取得 or 名前検索
+// クエリパラメータ name の有無で処理を分岐
+router.get('/mountains', (req, res, next) => {
+  // クエリパラメータ name がない場合は全件取得
+  if (!req.query.name) {
+    return mountainController.getAllMountains(req, res);
+  }
+  // name がある場合は名前検索（スクレイピング対応）
+  mountainController.getMountainByNameSearch(req, res);
+});
 
 // GET /api/mountains/:id - IDで山を取得
 router.get('/mountains/:id', mountainController.getMountainById);
