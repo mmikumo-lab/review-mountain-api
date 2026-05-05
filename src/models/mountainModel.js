@@ -33,12 +33,13 @@ const getMountainByName = async (name) => {
  * 山を作成
  * @param {string} name - 山の名前
  * @param {number} elevation_diff - 標高差（メートル）
+ * @param {string|null} total_time - 総歩行時間
  * @returns {Promise<Object>} 作成された山のデータ
  */
-const createMountain = async (name, elevation_diff) => {
+const createMountain = async (name, elevation_diff, total_time = null) => {
   const result = await pool.query(
-    'INSERT INTO mountains (name, elevation_diff) VALUES ($1, $2) RETURNING *',
-    [name, elevation_diff]
+    'INSERT INTO mountains (name, elevation_diff, total_time) VALUES ($1, $2, $3) RETURNING *',
+    [name, elevation_diff, total_time]
   );
   return result.rows[0];
 };

@@ -8,11 +8,11 @@ const SCRAPER_CONFIG = {
 };
 
 /**
- * yamaquest.comから標高差をスクレイピング
+ * yamaquest.comから山の情報をスクレイピング
  * @param {string} mountainName - 山の名前
- * @returns {Promise<number|null>} 標高差（m）、見つからない場合はnull
+ * @returns {Promise<Object|null>} 山の情報（標高差、総歩行時間）、見つからない場合はnull
  */
-const scrapeElevationDiff = async (mountainName) => {
+const scrapeMountainInfo = async (mountainName) => {
   try {
     console.log(`スクレイピング開始: ${mountainName}`);
 
@@ -27,8 +27,7 @@ const scrapeElevationDiff = async (mountainName) => {
 
     const $ = cheerio.load(response.data);
 
-    // 最初の検索結果から標高差を抽出
-    // HTML構造: <table class="li-data"> の中の4番目の<td>に標高差がある
+    // 最初の検索結果から情報を抽出
     const firstResult = $('.li-box').first();
 
     if (firstResult.length === 0) {
@@ -38,8 +37,6 @@ const scrapeElevationDiff = async (mountainName) => {
 
     // テーブルから標高差を取得（4番目のtd）
     const elevationDiffText = firstResult.find('.li-data tr:nth-child(2) td:nth-child(4)').text().trim();
-
-    // "1675m" から数値のみ抽出
     const elevationDiff = parseInt(elevationDiffText.replace(/[^\d]/g, ''), 10);
 
     if (isNaN(elevationDiff)) {
@@ -47,14 +44,60 @@ const scrapeElevationDiff = async (mountainName) => {
       return null;
     }
 
-    console.log(`スクレイピング成功: ${mountainName} = ${elevationDiff}m`);
-    return elevationDiff;
+    // 詳細ページのURLを取得
+    const detailUrl = firstResult.find('a').attr('href');
+    let totalTime = null;
+
+    if (detailUrl) {
+      const fullDetailUrl = `http://www.yamaquest.com${detailUrl}`;
+      console.log(`詳細ページにアクセス: ${fullDetailUrl}`);
+
+      // 詳細ページから総歩行時間を取得
+      const detailResponse = await axios.get(fullDetailUrl, {
+        timeout: SCRAPER_CONFIG.timeout,
+        headers: {
+          'User-Agent': SCRAPER_CONFIG.userAgent,
+        },
+      });
+
+      const $detail = cheerio.load(detailResponse.data);
+
+      // 総歩行時間を抽出
+      $detail('th').each((i, elem) => {
+        if ($detail(elem).text().trim() === '総歩行時間') {
+          // 次の<tr>要素の中の.ch-data1-valを探す
+          const nextRow = $detail(elem).closest('tr').next();
+          const timeText = nextRow.find('.ch-data1-val').text().trim();
+          if (timeText) {
+            totalTime = timeText.replace(/\s+/g, '');
+          }
+        }
+      });
+    }
+
+    console.log(`スクレイピング成功: ${mountainName} = ${elevationDiff}m, 総歩行時間: ${totalTime || '不明'}`);
+
+    return {
+      elevation_diff: elevationDiff,
+      total_time: totalTime,
+    };
   } catch (error) {
-    console.error('scrapeElevationDiff error:', error.message);
+    console.error('scrapeMountainInfo error:', error.message);
     return null;
   }
 };
 
+/**
+ * 後方互換性のため、標高差のみを返す関数
+ * @param {string} mountainName - 山の名前
+ * @returns {Promise<number|null>} 標高差（m）、見つからない場合はnull
+ */
+const scrapeElevationDiff = async (mountainName) => {
+  const info = await scrapeMountainInfo(mountainName);
+  return info ? info.elevation_diff : null;
+};
+
 module.exports = {
   scrapeElevationDiff,
+  scrapeMountainInfo,
 };

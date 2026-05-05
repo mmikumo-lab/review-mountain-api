@@ -110,9 +110,9 @@ const getMountainByNameSearch = async (req, res) => {
     if (!mountain) {
       console.log(`山 "${name}" がDBにありません。スクレイピングを試みます...`);
 
-      const elevationDiff = await scraperService.scrapeElevationDiff(name);
+      const mountainInfo = await scraperService.scrapeMountainInfo(name);
 
-      if (elevationDiff === null) {
+      if (mountainInfo === null) {
         return res.status(404).json({
           error: 'Mountain not found',
           message: '指定された山が見つかりません',
@@ -120,8 +120,8 @@ const getMountainByNameSearch = async (req, res) => {
       }
 
       // スクレイピング結果をDBに保存
-      mountain = await mountainModel.createMountain(name, elevationDiff);
-      console.log(`山 "${name}" をDBに保存しました（標高差: ${elevationDiff}m）`);
+      mountain = await mountainModel.createMountain(name, mountainInfo.elevation_diff, mountainInfo.total_time);
+      console.log(`山 "${name}" をDBに保存しました（標高差: ${mountainInfo.elevation_diff}m, 総歩行時間: ${mountainInfo.total_time || '不明'}）`);
     }
 
     res.json(mountain);
